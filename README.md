@@ -1,36 +1,144 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# StudySpark AI — AI Student Summarizer
 
-## Getting Started
+StudySpark AI is a study assistant for university and college students. Upload a
+lecture PDF or paste your notes, and it generates clear summaries, key concepts,
+definitions, exam revision notes, multiple-choice questions and short-answer
+questions — then saves everything to your account.
 
-First, run the development server:
+## Features
+
+- **AI summaries** in four styles (Simple English, Detailed Notes, Exam
+  Revision, Bullet Points) and three lengths (Short, Medium, Detailed).
+- **PDF upload** with server-side validation, text extraction and automatic
+  chunking for long documents.
+- **Exam question generator** with MCQs (four options, correct answer and
+  explanation), short-answer questions, difficulty levels and an interactive
+  quiz mode with scoring.
+- **Accounts** with Supabase Auth (email + password), protected pages and
+  sessions.
+- **Saved notes** stored in Supabase PostgreSQL, with search, type filters,
+  title editing and delete confirmation.
+- **Polished, responsive UI** with a sidebar, mobile navigation, loading states,
+  empty states and toast notifications.
+
+## Tech stack
+
+| Layer      | Technology                                  |
+| ---------- | ------------------------------------------- |
+| Framework  | Next.js 16 (App Router) + React 19          |
+| Language   | JavaScript (no TypeScript)                  |
+| Styling    | Tailwind CSS v4                             |
+| AI         | Google Gemini via `@google/genai`           |
+| Database   | Supabase PostgreSQL (Row Level Security)    |
+| Auth       | Supabase Auth (`@supabase/ssr`)             |
+| PDF        | `pdf-parse`                                 |
+| Deployment | Vercel-compatible                            |
+
+## Getting started
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Create your environment file
+
+Copy `.env.example` to `.env.local` and fill it in:
+
+```bash
+cp .env.example .env.local
+```
+
+```env
+GEMINI_API_KEY=your_gemini_key
+NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+- **Gemini key:** https://aistudio.google.com/app/apikey
+- **Supabase keys:** Dashboard → Project Settings → API. If your project shows a
+  **publishable** key instead of **anon**, use
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — the app supports both names.
+
+> The app still boots without keys and shows a friendly setup screen, but AI
+> features and login only work once the keys are present.
+
+### 3. Set up the database
+
+In the Supabase **SQL Editor**, run the contents of
+[`supabase/schema.sql`](./supabase/schema.sql). This creates the `notes` table,
+the Row Level Security policies and an `updated_at` trigger.
+
+### 4. (Optional) Turn off email confirmation for local testing
+
+Supabase → Authentication → Providers → Email. Disable "Confirm email" if you
+want to log in immediately after sign-up.
+
+### 5. Run the app
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+app/
+  page.jsx                 Landing page
+  layout.jsx               Root layout (fonts, toasts)
+  (auth)/                  Login and sign-up pages
+  (app)/                   Protected area (sidebar shell)
+    dashboard/             Overview + recent notes
+    create/                Summary workflow
+    questions/             Question generator + quiz
+    notes/                 Saved notes list and detail
+    settings/              Account + setup guide
+  api/                     Route Handlers (summarize, questions, extract-pdf, notes)
+  auth/                    Sign-out and email-callback routes
+components/                Reusable UI (AppShell, Markdown, QuestionList, toasts…)
+lib/                       Server logic (gemini, prompts, pdf, validation, api helpers)
+utils/supabase/            Supabase browser/server clients + session refresh
+proxy.js                   Session refresh + route protection (Next 16 "proxy")
+supabase/schema.sql        Database schema + RLS policies
+```
 
-## Learn More
+## API endpoints
 
-To learn more about Next.js, take a look at the following resources:
+| Method            | Path                 | Purpose                              |
+| ----------------- | -------------------- | ------------------------------------ |
+| `POST`            | `/api/summarize`     | Generate a summary                   |
+| `POST`            | `/api/questions`     | Generate MCQs + short answers        |
+| `POST`            | `/api/extract-pdf`   | Extract text from an uploaded PDF    |
+| `GET` / `POST`    | `/api/notes`         | List / create saved notes            |
+| `GET`/`PATCH`/`DELETE` | `/api/notes/:id` | Read / edit / delete a note          |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+All endpoints require a valid session, validate input on the server, and derive
+the user id from the verified session (never from the browser).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Security notes
 
-## Deploy on Vercel
+- The Gemini API key is **server-only**. It is never sent to the browser.
+- Supabase Row Level Security guarantees students can only access their own rows.
+- Uploads are validated by type, size and the `%PDF` file signature.
+- A small in-memory rate limiter protects the AI endpoints (replace with a shared
+  store such as Upstash for multi-instance production).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Known limitations
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Scanned/image-only PDFs are not supported** — there is no OCR. The app detects
+  this and shows a clear message. Use a text-based PDF or paste your notes.
+- Very long documents are summarised in parts and then merged, so a small amount
+  of detail can be lost.
+- The in-memory rate limiter resets on restart and is per-instance.
+
+## Deploying to Vercel
+
+1. Push the project to GitHub and import it into Vercel.
+2. Add the same environment variables in Vercel → Project → Settings →
+   Environment Variables.
+3. Add your Vercel domain to Supabase → Authentication → URL Configuration
+   (Site URL and Redirect URLs, e.g. `https://your-app.vercel.app/auth/callback`).
+4. Deploy.

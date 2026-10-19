@@ -1,26 +1,152 @@
 @import "tailwindcss";
 
+/* ------------------------------------------------------------------ */
+/*  Design tokens                                                      */
+/* ------------------------------------------------------------------ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f6f7fb;
+  --foreground: #0f172a;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@theme {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
+
+/* Visible focus states for keyboard users (accessibility). */
+:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Reusable component classes                                         */
+/* ------------------------------------------------------------------ */
+@layer components {
+  .card {
+    @apply rounded-2xl border border-slate-200 bg-white shadow-sm;
+  }
+
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-slate-700;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900
+      placeholder:text-slate-400 transition
+      focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20
+      disabled:cursor-not-allowed disabled:bg-slate-50;
+  }
+
+  /* Each button/badge class is self-contained because Tailwind v4 cannot
+     @apply one custom component class inside another. */
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  .btn-ghost,
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
+      transition select-none disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-primary {
+    @apply bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 active:bg-indigo-800;
+  }
+
+  .btn-secondary {
+    @apply border border-slate-300 bg-white text-slate-700 hover:bg-slate-50;
+  }
+
+  .btn-ghost {
+    @apply text-slate-600 hover:bg-slate-100 hover:text-slate-900;
+  }
+
+  .btn-danger {
+    @apply bg-rose-600 text-white hover:bg-rose-700;
+  }
+
+  .badge,
+  .badge-indigo,
+  .badge-emerald {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+
+  .badge-indigo {
+    @apply bg-indigo-50 text-indigo-700;
+  }
+
+  .badge-emerald {
+    @apply bg-emerald-50 text-emerald-700;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Markdown output styling (no external typography plugin needed)     */
+/* ------------------------------------------------------------------ */
+.markdown {
+  line-height: 1.7;
+  color: #1e293b;
+  font-size: 0.95rem;
+}
+.markdown h1,
+.markdown h2,
+.markdown h3 {
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.3;
+  margin: 1.4em 0 0.5em;
+}
+.markdown h1 { font-size: 1.5rem; }
+.markdown h2 { font-size: 1.25rem; }
+.markdown h3 { font-size: 1.05rem; }
+.markdown h1:first-child,
+.markdown h2:first-child,
+.markdown h3:first-child { margin-top: 0; }
+.markdown p { margin: 0.75em 0; }
+.markdown ul,
+.markdown ol { margin: 0.75em 0; padding-left: 1.4em; }
+.markdown ul { list-style: disc; }
+.markdown ol { list-style: decimal; }
+.markdown li { margin: 0.3em 0; }
+.markdown strong { color: #111827; font-weight: 700; }
+.markdown a { color: #4f46e5; text-decoration: underline; }
+.markdown code {
+  background: #f1f5f9;
+  padding: 0.15em 0.4em;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+.markdown pre {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 1em;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+.markdown pre code { background: transparent; color: inherit; padding: 0; }
+.markdown blockquote {
+  border-left: 3px solid #c7d2fe;
+  padding-left: 1em;
+  color: #475569;
+  margin: 1em 0;
+}
+.markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+  font-size: 0.9em;
+}
+.markdown th,
+.markdown td { border: 1px solid #e2e8f0; padding: 0.5em 0.75em; text-align: left; }
+.markdown th { background: #f8fafc; font-weight: 600; }
+.markdown hr { border: 0; border-top: 1px solid #e2e8f0; margin: 1.5em 0; }
